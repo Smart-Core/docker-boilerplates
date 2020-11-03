@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+    db:
+        build: ./postgres
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
+        volumes:
+            - db:/var/lib/postgresql/data
+            # @todo конфигурирование
+            # - ./var/postgresql/${APP_ENV}:/var/lib/postgresql/data
+
+    nodejs:
+        build: ./node
+        working_dir: ${WORKING_DIR}
+        volumes:
+            - ./../:${WORKING_DIR}
+
+    pgbouncer:
+        image: pgbouncer/pgbouncer:latest
+        depends_on:
+            - db
+        environment: # https://gitlab.com/aztek-io/oss/containers/pgbouncer-container/-/blob/master/entrypoint.sh
+            DATABASES_HOST: db
+            DATABASES_PORT: 5432
+            DATABASES_USER: ${DB_USER}
+            DATABASES_PASSWORD: ${DB_PASSWORD}
+            DATABASES_DBNAME: ${DB_NAME}
+            PGBOUNCER_POOL_MODE: transaction
+            PGBOUNCER_MAX_CLIENT_CONN: 1000
+
+    php-cli:
+        #build: ./php-cli-alpine
+        build: ./php-cli
+        working_dir: ${WORKING_DIR}
+        stdin_open: true # docker run -i
+        tty: true        # docker run -t
+        volumes:
+            - ./../:${WORKING_DIR}
+            - ${COMPOSER_CACHE_PATH}:/root/.composer/cache
+            - ./php-cli/global.ini:/usr/local/etc/php/conf.d/global.ini
+            - ./php-cli/apcu.ini:/usr/local/etc/php/conf.d/apcu.ini
+            - ./php-cli/symfony-console-autocomplete:/etc/bash_completion.d/symfony-console-autocomplete
+            - ./php-cli/.bashrc:/root/.bashrc
+        depends_on:
+            - pgbouncer
+        environment:
+            APP_ENV: ${APP_ENV}
+            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=12&charset=utf8'
+
+    php-fpm:
+        #build: ./php-fpm-alpine
+        build: ./php-fpm
+        working_dir: ${WORKING_DIR}
+        volumes:
+            - ./../:${WORKING_DIR}
+            - ./php-fpm/global.ini:/usr/local/etc/php/conf.d/global.ini
+            - ./php-fpm/apcu.ini:/usr/local/etc/php/conf.d/apcu.ini
+        depends_on:
+            - pgbouncer
+        environment:
+            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=12&charset=utf8'
+
+    php-swoole: # От обычноного php-cli отличается только entrypoint, чтобы можно было запускать скрипты-воркеры
+        entrypoint: ["/usr/local/bin/dumb-init", "--", "php"]
+        #build: ./php-cli-alpine
+        build: ./php-cli
+        working_dir: ${WORKING_DIR}
+        volumes:
+            - ./../:${WORKING_DIR}
+            - ./php-cli/global.ini:/usr/local/etc/php/conf.d/global.ini
+            - ./php-cli/apcu.ini:/usr/local/etc/php/conf.d/apcu.ini
+        depends_on:
+            - pgbouncer
+        environment:
+            APP_ENV: ${APP_ENV}
+            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=12&charset=utf8'
+
+    redis:
+        build: ./redis
+        command: redis-server /usr/local/etc/redis/redis.conf # --requirepass sOmE_sEcUrE_pAsS
+        environment:
+            REDIS_REPLICATION_MODE: master
+        volumes:
+            - redis:/var/lib/redis
+            - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+volumes:
+    db:
+    redis:
