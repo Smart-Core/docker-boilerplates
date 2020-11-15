@@ -1,0 +1,37 @@
+#!/bin/bash
+
+VAR="var"
+
+if [ ! -d "$VAR" ]; then
+    mkdir $VAR
+    mkdir $VAR/cache
+    mkdir $VAR/log
+fi
+
+#if [ ! -d "usr" ]; then
+#    mkdir usr
+#fi
+
+if [ ! -d "config/secrets" ]; then
+    mkdir config/secrets
+fi
+
+if [ ! -d "config/secrets/dev" ]; then
+    mkdir config/secrets/dev
+fi
+
+if [ ! -d "config/secrets/prod" ]; then
+    mkdir config/secrets/prod
+fi
+
+if [ ! -d "$VAR/sessions" ]; then
+    mkdir $VAR/sessions
+fi
+
+chmod -R 777 config/secrets
+#chmod 777 usr
+chmod 777 $VAR
+chmod -R 777 $VAR/cache
+chmod -R 777 $VAR/log
+chmod -R 777 $VAR/sessions
+find $VAR/log -type f -exec chmod 666 {} \;

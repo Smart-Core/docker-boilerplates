@@ -1,3 +1,5 @@
+.PHONY: bash composer deploy exec restart
+
 # Если существует .env.local, то он будет прочитан, иначе .env
 ifneq (",$(wildcard ./.env.local)")
     include .env.local
@@ -7,22 +9,31 @@ else
     DEFAULT_ENV_FILE = '.env'
 endif
 
-.PHONY: bash composer deploy exec restart
+INTERACTIVE := $(shell [ -t 0 ] && echo 1)
+ifdef INTERACTIVE # is a terminal
+	EXEC_TTY :=
+else # cron job
+	EXEC_TTY := -T
+endif
+
+ifneq (",$(wildcard /usr/bin/docker-compose)")
+	DOCKER_COMPOSE_BIN := /usr/bin/docker-compose
+else
+    DOCKER_COMPOSE_BIN := /usr/local/bin/docker-compose
+endif
+
+ifeq ($(OS),Windows_NT)
+    DOCKER_COMPOSE_BIN := winpty docker-compose
+endif
 
 args = `arg="$(filter-out $@,$(MAKECMDGOALS))" && echo $${arg:-${1}}`
 env = ${APP_ENV}
 pwd = $(shell eval pwd -P)
 
-ifeq ($(OS),Windows_NT)
-    winpty := winpty
-else
-    winpty :=
-endif
-
 ifneq (",$(wildcard ./docker-compose.local.yml)")
-    docker-compose = ${winpty} docker-compose --file=./.docker/docker-compose.yml --file=./.docker/docker-compose.${env}.yml --file=./docker-compose.local.yml --env-file=./.env.docker.${env}.local -p "${pwd}_${env}"
+    docker-compose = ${DOCKER_COMPOSE_BIN} --file=./.docker/docker-compose.yml --file=./.docker/docker-compose.${env}.yml --file=./docker-compose.local.yml --env-file=./.env.docker.${env}.local -p "${pwd}_${env}"
 else
-    docker-compose = ${winpty} docker-compose --file=./.docker/docker-compose.yml --file=./.docker/docker-compose.${env}.yml --env-file=./.env.docker.${env}.local -p "${pwd}_${env}"
+    docker-compose = ${DOCKER_COMPOSE_BIN} --file=./.docker/docker-compose.yml --file=./.docker/docker-compose.${env}.yml --env-file=./.env.docker.${env}.local -p "${pwd}_${env}"
 endif
 
 docker-compose-php-cli = ${docker-compose} run --rm php-cli

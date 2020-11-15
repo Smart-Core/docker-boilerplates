@@ -2,6 +2,7 @@ FROM php:7.4.12-fpm
 
 RUN apt-get update && apt-get install -y \
     apt-utils \
+    git \
     gnupg \
     lsb-release \
     g++ \
@@ -18,11 +19,6 @@ RUN apt-get update && apt-get install -y \
 
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
     && echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" |tee  /etc/apt/sources.list.d/pgdg.list
-
-RUN apt-get update --fix-missing
-
-RUN apt-get install -y \
-    git
 
 RUN apt-get install -y \
     libcurl4-gnutls-dev \
@@ -48,7 +44,7 @@ RUN docker-php-ext-install -j$(nproc) bcmath \
     && docker-php-ext-install -j$(nproc) zip
 
 RUN pecl install apcu && docker-php-ext-enable apcu
-#RUN pecl install dbase && docker-php-ext-enable dbase
+RUN pecl install dbase && docker-php-ext-enable dbase
 RUN pecl install memcached && docker-php-ext-enable memcached
 RUN pecl install redis && docker-php-ext-enable redis
 RUN pecl install timezonedb && docker-php-ext-enable timezonedb
@@ -59,7 +55,8 @@ RUN pecl install timezonedb && docker-php-ext-enable timezonedb
 #    && docker-php-ext-install -j$(nproc) pdo_mysql
 
 ### PostgreSQL
-RUN apt-get install -y postgresql-client \
+RUN echo "installing postgresql 13.1 or higher..."
+RUN apt-get update --fix-missing && apt-get install -y postgresql-client \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install -j$(nproc) pgsql \
     && docker-php-ext-install -j$(nproc) pdo_pgsql
@@ -128,9 +125,6 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 #RUN chmod +x /usr/local/bin/dumb-init
 
 ### Configs
-#COPY ./apcu.ini /usr/local/etc/php/conf.d/apcu.ini
-#COPY ./opcache.ini /usr/local/etc/php/conf.d/opcache.ini
-#COPY ./global.ini /usr/local/etc/php/conf.d/global.ini
 #COPY ./xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 #COPY ./fpm.www.conf /usr/local/etc/php-fpm.d/www.conf
 

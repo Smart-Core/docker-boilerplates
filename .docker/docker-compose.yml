@@ -39,7 +39,7 @@ services:
         tty: true        # docker run -t
         volumes:
             - ./../:${WORKING_DIR}
-            - ${COMPOSER_CACHE_PATH}:/root/.composer/cache
+            - '${COMPOSER_CACHE_PATH}:/root/.composer/cache'
             - ./php-cli/global.ini:/usr/local/etc/php/conf.d/global.ini
             - ./php-cli/apcu.ini:/usr/local/etc/php/conf.d/apcu.ini
             - ./php-cli/symfony-console-autocomplete:/etc/bash_completion.d/symfony-console-autocomplete
@@ -48,7 +48,7 @@ services:
             - pgbouncer
         environment:
             APP_ENV: ${APP_ENV}
-            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=12&charset=utf8'
+            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=13.1&charset=utf8'
 
     php-fpm:
         #build: ./php-fpm-alpine
@@ -61,7 +61,7 @@ services:
         depends_on:
             - pgbouncer
         environment:
-            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=12&charset=utf8'
+            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=13.1&charset=utf8'
 
     php-swoole: # От обычноного php-cli отличается только entrypoint, чтобы можно было запускать скрипты-воркеры
         entrypoint: ["/usr/local/bin/dumb-init", "--", "php"]
@@ -76,7 +76,7 @@ services:
             - pgbouncer
         environment:
             APP_ENV: ${APP_ENV}
-            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=12&charset=utf8'
+            DATABASE_URL: 'pgsql://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/${DB_NAME}?serverVersion=13.1&charset=utf8'
 
     redis:
         build: ./redis

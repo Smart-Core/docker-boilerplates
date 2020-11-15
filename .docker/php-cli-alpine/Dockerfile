@@ -157,6 +157,7 @@ RUN apk add --no-cache sshpass fping
 RUN apk add hping3 --update-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing
 
 ### Composer
+RUN echo "installing Composer v2.0.4 or higher..."
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/bin --filename=composer --quiet
 ENV COMPOSER_ALLOW_SUPERUSER 1
 

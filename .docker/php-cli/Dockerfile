@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     lsb-release \
     g++ \
+    nano \
     wget \
     ssh \
     unzip \
@@ -108,16 +109,14 @@ RUN apt-get install -y sshpass hping3
 
 ### Swoole
 RUN apt-get install -y openssl \
-    nano \
     libssl-dev \
     wget \
     git \
-    procps \
-    htop
+    procps
 
 RUN cd /tmp && git clone https://github.com/swoole/swoole-src.git && \
     cd swoole-src && \
-    git checkout v4.5.5 && \
+    git checkout v4.5.7 && \
     phpize  && \
     ./configure  --enable-openssl && \
     make && make install
@@ -132,9 +131,11 @@ RUN chmod +x /usr/local/bin/dumb-init
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ### Composer
+RUN echo "installing Composer v2.0.4 or higher..."
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/bin --filename=composer --quiet
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
-RUN wget https://get.symfony.com/cli/installer -O - | bash && \
-    mv /root/.symfony/bin/symfony /usr/local/bin/symfony && \
-    symfony local:server:ca:install
+### Symfony CLI
+#RUN wget https://get.symfony.com/cli/installer -O - | bash && \
+#    mv /root/.symfony/bin/symfony /usr/local/bin/symfony && \
+#    symfony local:server:ca:install
